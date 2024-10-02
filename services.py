@@ -20,12 +20,12 @@ def find_overlap(user1_id, user2_id):
     return overlaps
 
 
-def check_availability(user_id, meeting_start_time, meeting_end_time):
+def check_availability(user_id, start_time, end_time):
     """ Check if a user has availability during the requested meeting time. """
     available_slots = Availability.query.filter_by(user_id=user_id).all()
 
     for slot in available_slots:
-        if slot.start_time <= meeting_start_time and slot.end_time >= meeting_end_time:
+        if slot.start_time <= start_time and slot.end_time >= end_time:
             return True  # Available
     return False
 

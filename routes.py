@@ -1,4 +1,5 @@
 # API routes
+import time
 
 from flask import Blueprint, request, jsonify
 from models import User, Availability, db
@@ -23,9 +24,12 @@ def set_availability():
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "user do not exist"}), 404
-    # TODO: check if start_time < end_time
-    # check if start_time & end_time> current time
-    # check if not overlapping with existing slots
+
+    if end_time < start_time < int(time.time()) or end_time < int(time.time()):
+        return jsonify({"error": "invalid time"}), 400
+    # check if there is a meeting scheduled in the requested time
+    if services.check_availability(user_id, start_time, end_time):
+        return jsonify({"error": "User is not available in the requested time"}), 400
     availability = Availability(user_id=user_id, start_time=start_time, end_time=end_time)
     db.session.add(availability)
     db.session.commit()
