@@ -1,5 +1,6 @@
 import json
 import unittest
+from datetime import datetime
 
 from app import create_app
 from models import User, db
@@ -28,7 +29,7 @@ class APITestCase(unittest.TestCase):
             db.drop_all()
 
     def test_get_users(self):
-        response = self.client.get('/users')
+        response = self.client.get('/api/users')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertEqual(len(data), 2)
@@ -36,30 +37,49 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(data[1]['name'], 'User2')
 
     def test_set_availability(self):
-        response = self.client.post('/availability', json={
+        start_time = datetime.fromisoformat('2025-01-01T00:00:00').timestamp()
+        end_time = datetime.fromisoformat('2025-01-01T01:00:00').timestamp()
+        response = self.client.post('/api/availability', json={
             'user_id': 1,
-            'start_time': 1609459200,  # 2021-01-01 00:00:00
-            'end_time': 1609462800  # 2021-01-01 01:00:00
+            'start_time': start_time,
+            'end_time': end_time
         })
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data)
         self.assertEqual(data['message'], 'Availability set successfully')
 
-    def test_get_availability(self):
-        self.client.post('/availability', json={
-            'user_id': 1,
-            'start_time': 1609459200,
-            'end_time': 1609462800
-        })
         response = self.client.get('/availability/1')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertEqual(len(data), 1)
-        self.assertEqual(data[0]['start_time'], 1609459200)
-        self.assertEqual(data[0]['end_time'], 1609462800)
+        self.assertEqual(data[0]['start_time'], start_time)
+        self.assertEqual(data[0]['end_time'], end_time)
+
+
+    def test_set_availability_invalid_time(self):
+        # cannot modify a past availability
+        response = self.client.post('/api/availability', json={
+            'user_id': 1,
+            'start_time': datetime.fromisoformat('2020-01-01T00:00:00').timestamp(),
+            'end_time': datetime.fromisoformat('2020-01-01T01:00:00').timestamp()
+        })
+        self.assertEqual(response.status_code, 400)
+        data = json.loads(response.data)
+        self.assertEqual(data['error'], 'invalid time')
+
+        # start time cannot be greater than end time
+        response = self.client.post('/api/availability', json={
+            'user_id': 1,
+            'start_time': datetime.fromisoformat('2025-01-01T01:00:00').timestamp(),
+            'end_time': datetime.fromisoformat('2025-01-01T00:00:00').timestamp()
+        })
+
+        self.assertEqual(response.status_code, 400)
+        data = json.loads(response.data)
+        self.assertEqual(data['error'], 'invalid time')
 
     def test_check_overlap(self):
-        self.client.post('/availability', json={
+        self.client.post('/api/availability', json={
             'user_id': 1,
             'start_time': 1609459200,
             'end_time': 1609462800
@@ -77,7 +97,7 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(data[0]['end_time'], 1609462800)
 
     def test_schedule_meeting(self):
-        self.client.post('/availability', json={
+        self.client.post('/api/availability', json={
             'user_id': 1,
             'start_time': 1609459200,
             'end_time': 1609462800
