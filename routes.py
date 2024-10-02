@@ -1,12 +1,10 @@
 # API routes
-import time
 
-from flask import Blueprint, request
-from flask_restx import Api, Resource
+from flask import Blueprint
+from flask_restx import Api, Resource, reqparse
 
 import services
-from exceptions import AvailabilityError, UserNotFoundError
-from models import Availability, User, db
+from api_exceptions import AvailabilityError, UserNotFoundError
 
 bp = Blueprint('api', __name__)
 api = Api(bp, version='1.0', title='Calendly API', description='A simple API server for scheduling meetings')
@@ -26,14 +24,19 @@ class AvailabilityApi(Resource):
         availability = services.get_availability(user_id)
         return [{"start_time": slot.start_time, "end_time": slot.end_time} for slot in availability]
 
+    def parse_args(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('start_time', type=int, required=True)
+        parser.add_argument('end_time', type=int, required=True)
+        return parser.parse_args()
+
     def post(self, user_id):
         """Set availability for a user"""
-        data = request.json
-        start_time = data['start_time']
-        end_time = data['end_time']
+
+        args = self.parse_args()
 
         try:
-            services.set_user_availability(user_id, start_time, end_time)
+            services.set_user_availability(user_id, args['start_time'], args['end_time'])
         except UserNotFoundError:
             return {"error": "user do not exist"}, 404
         except AvailabilityError as e:
@@ -44,26 +47,36 @@ class AvailabilityApi(Resource):
 
 @api.route('/overlap')
 class Overlap(Resource):
-    def get(self):
-        user1_id = request.args.get('user1_id')
-        user2_id = request.args.get('user2_id')
 
-        overlap_slots = services.find_overlap(user1_id, user2_id)
+    def parse_args(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('user1_id', type=int, required=True)
+        parser.add_argument('user2_id', type=int, required=True)
+        return parser.parse_args()
+
+    def get(self):
+        args = self.parse_args()
+        overlap_slots = services.find_overlap(args['user1_id'], args['user2_id'])
 
         return overlap_slots
 
 
 @api.route('/meeting')
 class Meeting(Resource):
+    def parse_args(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('user1_id', type=int, required=True)
+        parser.add_argument('user2_id', type=int, required=True)
+        parser.add_argument('meeting_start_time', type=int, required=True)
+        parser.add_argument('meeting_end_time', type=int, required=True)
+        return parser.parse_args()
+
     def post(self):
-        data = request.json
-        user1_id = data['user1_id']
-        user2_id = data['user2_id']
-        meeting_start_time = data['meeting_start_time']
-        meeting_end_time = data['meeting_end_time']
+        args = self.parse_args()
 
         try:
-            services.schedule_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time)
+            services.schedule_meeting(args['user1_id'], args['user2_id'], args['meeting_start_time'],
+                                      args['meeting_end_time'])
         except UserNotFoundError:
             return {"error": "One or both users do not exist"}, 404
         except AvailabilityError:

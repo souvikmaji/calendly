@@ -1,7 +1,7 @@
 # Business logic for handling availability and overlaps
 import time
 
-from exceptions import AvailabilityError, UserNotFoundError
+from api_exceptions import AvailabilityError, UserNotFoundError
 from models import Availability, Meeting, User, db
 
 
@@ -50,6 +50,7 @@ def set_user_availability(user_id, start_time, end_time):
     if start_time >= end_time or start_time < current_time or end_time < current_time:
         raise AvailabilityError("Invalid time")
 
+    # TODO: Check if the user is already available in the requested time, if there is a consecutive slot, merge them
     if check_availability(user_id, start_time, end_time):
         raise AvailabilityError("User is not available in the requested time")
 
