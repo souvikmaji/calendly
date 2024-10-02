@@ -61,7 +61,7 @@ class APITestCase(unittest.TestCase):
                                           'end_time': datetime.fromisoformat('2020-01-01T01:00:00').timestamp()})
         self.assertEqual(400, response.status_code)
         data = json.loads(response.data)
-        self.assertEqual('invalid time', data['error'])
+        self.assertEqual('Invalid time', data['error'])
 
         # start time cannot be greater than end time
         response = self.client.post('/api/availability/1',
@@ -70,7 +70,7 @@ class APITestCase(unittest.TestCase):
 
         self.assertEqual(400, response.status_code)
         data = json.loads(response.data)
-        self.assertEqual('invalid time', data['error'])
+        self.assertEqual('Invalid time', data['error'])
 
     def test_check_perfect_overlap(self):
         response = self.client.post('/api/availability/1',

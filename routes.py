@@ -5,15 +5,17 @@ from flask import Blueprint, request
 from flask_restx import Api, Resource
 
 import services
+from exceptions import AvailabilityError, UserNotFoundError
 from models import Availability, User, db
 
 bp = Blueprint('api', __name__)
 api = Api(bp, version='1.0', title='Calendly API', description='A simple API server for scheduling meetings')
 
+
 @api.route('/users')
 class Users(Resource):
     def get(self):
-        users = User.query.all()
+        users = services.get_all_users()
         return [{"id": user.id, "name": user.name} for user in users]
 
 
@@ -21,11 +23,8 @@ class Users(Resource):
 class AvailabilityApi(Resource):
 
     def get(self, user_id):
-        availability = Availability.query.filter_by(user_id=user_id).all()
-        return [{
-            "start_time": slot.start_time,
-            "end_time": slot.end_time
-        } for slot in availability]
+        availability = services.get_availability(user_id)
+        return [{"start_time": slot.start_time, "end_time": slot.end_time} for slot in availability]
 
     def post(self, user_id):
         """Set availability for a user"""
@@ -33,20 +32,12 @@ class AvailabilityApi(Resource):
         start_time = data['start_time']
         end_time = data['end_time']
 
-        user = User.query.get(user_id)
-        if not user:
+        try:
+            services.set_user_availability(user_id, start_time, end_time)
+        except UserNotFoundError:
             return {"error": "user do not exist"}, 404
-
-        current_time = int(time.time())
-        if start_time >= end_time or start_time < current_time or end_time < current_time:
-            return {"error": "invalid time"}, 400
-
-        # check if there is a meeting scheduled in the requested time
-        if services.check_availability(user_id, start_time, end_time):
-            return {"error": "User is not available in the requested time"}, 400
-        availability = Availability(user_id=user_id, start_time=start_time, end_time=end_time)
-        db.session.add(availability)
-        db.session.commit()
+        except AvailabilityError as e:
+            return {"error": str(e)}, 400
 
         return {"message": "Availability set successfully"}, 201
 
@@ -71,18 +62,11 @@ class Meeting(Resource):
         meeting_start_time = data['meeting_start_time']
         meeting_end_time = data['meeting_end_time']
 
-        # Validate users exist
-        user1 = User.query.get(user1_id)
-        user2 = User.query.get(user2_id)
-        if not user1 or not user2:
+        try:
+            services.schedule_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time)
+        except UserNotFoundError:
             return {"error": "One or both users do not exist"}, 404
-
-        # Check if the requested meeting time is available for both users
-        if not services.check_availability(user1_id, meeting_start_time, meeting_end_time) or \
-                not services.check_availability(user2_id, meeting_start_time, meeting_end_time):
+        except AvailabilityError:
             return {"error": "No overlap found in availability for the requested time"}, 400
-
-        # Schedule the meeting and update availability for both users
-        services.schedule_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time)
 
         return {"message": "Meeting scheduled successfully!"}, 201

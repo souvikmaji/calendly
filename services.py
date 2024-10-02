@@ -1,11 +1,22 @@
 # Business logic for handling availability and overlaps
+import time
 
-from models import Availability, Meeting, db
+from exceptions import AvailabilityError, UserNotFoundError
+from models import Availability, Meeting, User, db
+
+
+def get_all_users():
+    return User.query.all()
+
+
+def get_availability(user_id):
+    availability = Availability.query.filter_by(user_id=user_id).all()
+    return availability
 
 
 def find_overlap(user1_id, user2_id):
-    user1_slots = Availability.query.filter_by(user_id=user1_id).all()
-    user2_slots = Availability.query.filter_by(user_id=user2_id).all()
+    user1_slots = get_availability(user1_id)
+    user2_slots = get_availability(user2_id)
 
     overlaps = []
 
@@ -22,7 +33,7 @@ def find_overlap(user1_id, user2_id):
 
 def check_availability(user_id, start_time, end_time):
     """ Check if a user has availability during the requested meeting time. """
-    available_slots = Availability.query.filter_by(user_id=user_id).all()
+    available_slots = get_availability(user_id)
 
     for slot in available_slots:
         if slot.start_time <= start_time and slot.end_time >= end_time:
@@ -30,9 +41,38 @@ def check_availability(user_id, start_time, end_time):
     return False
 
 
+def set_user_availability(user_id, start_time, end_time):
+    user = User.query.get(user_id)
+    if not user:
+        raise UserNotFoundError("User does not exist")
+
+    current_time = int(time.time())
+    if start_time >= end_time or start_time < current_time or end_time < current_time:
+        raise AvailabilityError("Invalid time")
+
+    if check_availability(user_id, start_time, end_time):
+        raise AvailabilityError("User is not available in the requested time")
+
+    availability = Availability(user_id=user_id, start_time=start_time, end_time=end_time)
+    db.session.add(availability)
+    db.session.commit()
+
+
 def schedule_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time):
     """ Schedule a meeting between two users and update their availability. """
+    user1 = User.query.get(user1_id)
+    user2 = User.query.get(user2_id)
+    if not user1 or not user2:
+        raise UserNotFoundError("One or both users do not exist")
 
+    if (not check_availability(user1_id, meeting_start_time, meeting_end_time) or not check_availability(user2_id,
+                                                                                                         meeting_start_time,
+                                                                                                         meeting_end_time)):
+        raise AvailabilityError("No overlap found in availability for the requested time")
+    create_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time)
+
+
+def create_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time):
     # Create new meeting entry
     meeting = Meeting(user1_id=user1_id, user2_id=user2_id, meeting_time=meeting_start_time)
     db.session.add(meeting)
@@ -43,7 +83,6 @@ def schedule_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time):
     # Adjust availability for user2
     _update_availability(user2_id, meeting_start_time, meeting_end_time)
 
-    # Commit changes to the database
     db.session.commit()
 
 
