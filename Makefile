@@ -1,8 +1,8 @@
-.PHONY: run install test
+.PHONY: run install test deploy
 
 # Target to run the application server
 run:
-	python app.py
+	gunicorn -w 4 -b 127.0.0.1:5000 app:app
 
 # Target to install dependencies
 install:
@@ -12,3 +12,6 @@ install:
 test:
 	python -m unittest discover -s tests
 
+# Clean up compiled Python files
+clean:
+	find . -name "*.pyc" -exec rm -f {} \;
