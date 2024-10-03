@@ -11,6 +11,9 @@ fake = Faker()
 def seed_users_and_availability(num_users=10, num_slots_per_user=5):
     app = create_app()
     with app.app_context():
+        # create all tables
+        db.create_all()
+
         # Create users
         for _ in range(num_users):
             user = User(name=fake.user_name())
