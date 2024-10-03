@@ -6,11 +6,11 @@ from flask import Flask
 from src.db import init_db
 from src.routes import bp as api_routes
 
-load_dotenv()  # take environment variables from .env.
 
 
 def create_app():
     app = Flask(__name__)
+    load_dotenv()  # take environment variables from .env.
 
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///db.sqlite')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
