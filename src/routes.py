@@ -3,8 +3,8 @@
 from flask import Blueprint
 from flask_restx import Api, Resource, reqparse
 
-import services
-from api_exceptions import AvailabilityError, UserNotFoundError
+from src import services
+from src.api_exceptions import AvailabilityError, UserNotFoundError
 
 bp = Blueprint('api', __name__)
 api = Api(bp, version='1.0', title='Calendly API', description='A simple API server for scheduling meetings')

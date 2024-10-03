@@ -1,6 +1,6 @@
 # Data models for users, availability, and meetings
 
-from db import db
+from src.db import db
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)

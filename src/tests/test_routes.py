@@ -3,7 +3,7 @@ import unittest
 from datetime import datetime
 
 from app import create_app
-from models import User, db
+from src.models import User, db
 
 
 class APITestCase(unittest.TestCase):

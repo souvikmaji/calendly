@@ -3,7 +3,7 @@ from faker import Faker
 from datetime import datetime, timedelta
 
 from app import create_app
-from models import db, User, Availability
+from src.models import db, User, Availability
 
 fake = Faker()
 

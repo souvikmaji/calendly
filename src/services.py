@@ -1,8 +1,8 @@
 # Business logic for handling availability and overlaps
 import time
 
-from api_exceptions import AvailabilityError, UserNotFoundError
-from models import Availability, Meeting, User, db
+from src.models import Availability, Meeting, User, db
+from src.api_exceptions import AvailabilityError, UserNotFoundError
 
 
 def get_all_users():

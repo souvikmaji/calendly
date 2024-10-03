@@ -1,7 +1,7 @@
 from flask import Flask
 
-from db import init_db
-from routes import bp as api_routes
+from src.db import init_db
+from src.routes import bp as api_routes
 
 
 def create_app():
