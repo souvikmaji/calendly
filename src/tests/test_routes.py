@@ -34,7 +34,7 @@ class APITestCase(unittest.TestCase):
     def test_get_users(self):
         response = self.client.get('/api/users')
         self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
+        data = response.json
         self.assertEqual(len(data), 2)
         self.assertEqual('User1', data[0]['name'])
         self.assertEqual('User2', data[1]['name'])
@@ -43,13 +43,12 @@ class APITestCase(unittest.TestCase):
         response = self.client.post('/api/availability/1',
                                     json={'start_time': self.start_time, 'end_time': self.end_time})
         self.assertEqual(201, response.status_code)
-        data = json.loads(response.data)
-        self.assertEqual('Availability set successfully', data['message'])
+        self.assertEqual('Availability set successfully', response.json['message'])
 
         # once set, availability should be returned
         response = self.client.get('/api/availability/1')
         self.assertEqual(200, response.status_code)
-        data = json.loads(response.data)
+        data = response.json
         self.assertEqual(1, len(data))
         self.assertEqual(self.start_time, data[0]['start_time'])
         self.assertEqual(self.end_time, data[0]['end_time'])
@@ -60,8 +59,7 @@ class APITestCase(unittest.TestCase):
                                     json={'start_time': datetime.fromisoformat('2020-01-01T00:00:00').timestamp(),
                                           'end_time': datetime.fromisoformat('2020-01-01T01:00:00').timestamp()})
         self.assertEqual(400, response.status_code)
-        data = json.loads(response.data)
-        self.assertEqual('Invalid time', data['error'])
+        self.assertEqual('Invalid time', response.json['error'])
 
         # start time cannot be greater than end time
         response = self.client.post('/api/availability/1',
@@ -69,8 +67,7 @@ class APITestCase(unittest.TestCase):
                                           'end_time': datetime.fromisoformat('2025-01-01T00:00:00').timestamp()})
 
         self.assertEqual(400, response.status_code)
-        data = json.loads(response.data)
-        self.assertEqual('Invalid time', data['error'])
+        self.assertEqual('Invalid time', response.json['error'])
 
     def test_check_perfect_overlap(self):
         response = self.client.post('/api/availability/1',
@@ -83,8 +80,8 @@ class APITestCase(unittest.TestCase):
 
         response = self.client.get('/api/overlap?user1_id=1&user2_id=2')
         self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
-        self.assertEqual(len(data), 1)
+        data = response.json
+        self.assertEqual(1, len(data))
         self.assertEqual(data[0]['start_time'], self.start_time)
         self.assertEqual(data[0]['end_time'], self.end_time)
 
@@ -98,11 +95,11 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(201, response.status_code)
 
         response = self.client.get('/api/overlap?user1_id=1&user2_id=2')
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
-        self.assertEqual(len(data), 1)
-        self.assertEqual(data[0]['start_time'], self.start_time + 1800)
-        self.assertEqual(data[0]['end_time'], self.end_time)
+        self.assertEqual(200, response.status_code)
+        data = response.json
+        self.assertEqual(1, len(data))
+        self.assertEqual( self.start_time + 1800, data[0]['start_time'])
+        self.assertEqual(self.end_time,data[0]['end_time'])
 
     def test_schedule_meeting(self):
         response = self.client.post('/api/availability/1',
@@ -116,14 +113,13 @@ class APITestCase(unittest.TestCase):
         response = self.client.post('/api/meeting',
                                     json={'user1_id': 1, 'user2_id': 2, 'meeting_start_time': self.start_time,
                                           'meeting_end_time': self.end_time})
-        self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data)
-        self.assertEqual(data['message'], 'Meeting scheduled successfully!')
+        self.assertEqual(201, response.status_code)
+        self.assertEqual('Meeting scheduled successfully!', response.json['message'])
 
         # check if the availability is removed
         response = self.client.get('/api/availability/1')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(json.loads(response.data)), 0)
+        self.assertEqual(200, response.status_code )
+        self.assertEqual(0, len(response.json))
 
         response = self.client.get('/api/availability/2')
         self.assertEqual(response.status_code, 200)
@@ -141,18 +137,16 @@ class APITestCase(unittest.TestCase):
         response = self.client.post('/api/meeting',
                                     json={'user1_id': 1, 'user2_id': 2, 'meeting_start_time': self.start_time,
                                           'meeting_end_time': self.end_time})
-        self.assertEqual(response.status_code, 400)
-        data = json.loads(response.data)
-        self.assertEqual(data['error'], 'No overlap found in availability for the requested time')
+        self.assertEqual(400, response.status_code )
+        self.assertEqual('No overlap found in availability for the requested time', response.json['error'])
 
     def test_schedule_meeting_no_availability(self):
         # both users have no availability
         response = self.client.post('/api/meeting',
                                     json={'user1_id': 1, 'user2_id': 2, 'meeting_start_time': self.start_time,
                                           'meeting_end_time': self.end_time})
-        self.assertEqual(response.status_code, 400)
-        data = json.loads(response.data)
-        self.assertEqual(data['error'], 'No overlap found in availability for the requested time')
+        self.assertEqual(400, response.status_code )
+        self.assertEqual('No overlap found in availability for the requested time', response.json['error'] )
 
         # add availability for user2
         response = self.client.post('/api/availability/2',
@@ -163,9 +157,8 @@ class APITestCase(unittest.TestCase):
         response = self.client.post('/api/meeting',
                                     json={'user1_id': 1, 'user2_id': 2, 'meeting_start_time': self.start_time,
                                           'meeting_end_time': self.end_time})
-        self.assertEqual(response.status_code, 400)
-        data = json.loads(response.data)
-        self.assertEqual(data['error'], 'No overlap found in availability for the requested time')
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('No overlap found in availability for the requested time', response.json['error'])
 
     def test_schedule_meeting_within_availability(self):
         response = self.client.post('/api/availability/1',
@@ -179,19 +172,18 @@ class APITestCase(unittest.TestCase):
         response = self.client.post('/api/meeting',
                                     json={'user1_id': 1, 'user2_id': 2, 'meeting_start_time': self.start_time + 1800,
                                           'meeting_end_time': self.end_time - 1800})
-        self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data)
-        self.assertEqual(data['message'], 'Meeting scheduled successfully!')
+        self.assertEqual(201, response.status_code)
+        self.assertEqual('Meeting scheduled successfully!', response.json['message'] )
 
         # check if the availability is divided
         response = self.client.get('/api/availability/1')
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
-        self.assertEqual(len(data), 2)
-        self.assertEqual(data[0]['start_time'], self.start_time)
-        self.assertEqual(data[0]['end_time'], self.start_time + 1800)
-        self.assertEqual(data[1]['start_time'], self.end_time - 1800)
-        self.assertEqual(data[1]['end_time'], self.end_time)
+        self.assertEqual(200, response.status_code)
+        data = response.json
+        self.assertEqual(2, len(data))
+        self.assertEqual(self.start_time, data[0]['start_time'])
+        self.assertEqual(self.start_time + 1800, data[0]['end_time'])
+        self.assertEqual(self.end_time - 1800, data[1]['start_time'])
+        self.assertEqual(self.end_time, data[1]['end_time'])
 
 
 if __name__ == '__main__':
