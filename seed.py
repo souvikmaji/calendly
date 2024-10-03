@@ -1,13 +1,15 @@
 import random
 from faker import Faker
 from datetime import datetime, timedelta
+
+from app import create_app
 from models import db, User, Availability
-from app import app
 
 fake = Faker()
 
 
 def seed_users_and_availability(num_users=10, num_slots_per_user=5):
+    app = create_app()
     with app.app_context():
         # Create users
         for _ in range(num_users):

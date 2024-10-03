@@ -2,7 +2,7 @@
 
 # Target to run the application server
 run:
-	gunicorn -w 4 -b 127.0.0.1:5000 app:app
+	gunicorn -w 4 -b 127.0.0.1:5000 'app:create_app()'
 
 # Target to install dependencies
 install:
