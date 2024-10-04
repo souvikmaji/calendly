@@ -26,6 +26,7 @@ Rest APIs for Calendly like applications.
 5. **Timezone handling**
 -  The backend saves all timestamp fields in epoch timestamp. The frontend can convert it to the user's timezone (or any timezone of the user's choice).
 
+6. **Swagger Documentation**
 
 ## Installation
 
@@ -53,7 +54,7 @@ Access the API documentation at [http://localhost:5001/api/docs](http://localhos
    
     Alternatively, you can use `virtualenv` or `pipenv` for creating a virtual environment.
     ```sh
-    python3 -m venv venv
+    python -m venv venv
     source venv/bin/activate
     ```
 3. Install the dependencies
@@ -76,12 +77,12 @@ Access the API documentation at [http://localhost:5001/api/docs](http://localhos
     ```sh
     make run
     ```
-   By default, it will start the server at port 5000. You can change the port in the `.env` file.
+   By default, it will start the server at port 5001. You can change the port in the `.env` file.
 7. Seed the database with some initial data
     ```sh
     python seed.py
     ```
-8. Access the API documentation at [http://localhost:5000/api/docs](http://localhost:5000/api/docs)
+8. Access the API documentation at [http://localhost:5001/api/docs](http://localhost:5001/api/docs)
 9. Run tests
     ```sh
     make test
@@ -107,6 +108,12 @@ Access the API documentation at [http://localhost:5001/api/docs](http://localhos
 +-----------------+                                                  +-----------------+
 ```
 
+### Assumptions
+- The user can set availability and schedule meetings for any time in the future not in the past.
+- Authentication & authorization is someone else's responsibility (ex: API Gateway).
+- Users are already existing in the system, sign up might be implemented in a different service.
+- Timezone handling is the responsibility of the frontend. The backend saves all timestamps in epoch timestamp.
+- There is no daylight saving time handling. 
    
 ## Future Improvements
 - Add authentication and authorization (one user should not be able to set availability of another user).
@@ -115,6 +122,4 @@ Access the API documentation at [http://localhost:5001/api/docs](http://localhos
 - We can implement another useful API, Timeline view API, which will return all the available slots and scheduled meetings
   for a user in a timeline view.
 - The list APIs can be paginated.
-
-
-
+- API to add users.
