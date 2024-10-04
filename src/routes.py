@@ -7,12 +7,13 @@ from src import services
 from src.api_exceptions import AvailabilityError, InvalidTimestampError, UserNotFoundError
 
 bp = Blueprint('api', __name__)
-api = Api(bp, version='1.0', title='Calendly API', description='A simple API server for scheduling meetings')
+api = Api(bp, version='1.0', title='Calendly API', description='A simple API server for scheduling meetings', doc='/docs')
 
 
 @api.route('/users')
 class Users(Resource):
     def get(self):
+        """Get all users"""
         users = services.get_all_users()
         return [{"id": user.id, "name": user.name} for user in users]
 
@@ -21,6 +22,7 @@ class Users(Resource):
 class AvailabilityApi(Resource):
 
     def get(self, user_id):
+        """Get availability for a user"""
         availability = services.get_availability(user_id)
         return [{"start_time": slot.start_time, "end_time": slot.end_time} for slot in availability]
 
@@ -30,6 +32,7 @@ class AvailabilityApi(Resource):
         parser.add_argument('end_time', type=int, required=True)
         return parser.parse_args()
 
+    @api.doc(params={'start_time': 'Start time of availability slot', 'end_time': 'End time of availability slot'})
     def post(self, user_id):
         """Set availability for a user"""
 
@@ -56,7 +59,9 @@ class Overlap(Resource):
         parser.add_argument('user2_id', type=int, required=True)
         return parser.parse_args()
 
+    @api.doc(params={'user1_id': 'ID of first user', 'user2_id': 'ID of second user'})
     def get(self):
+        """Get overlap between two users' availability"""
         args = self.parse_args()
         overlap_slots = services.find_overlap(args['user1_id'], args['user2_id'])
 
@@ -73,7 +78,10 @@ class Meeting(Resource):
         parser.add_argument('meeting_end_time', type=int, required=True)
         return parser.parse_args()
 
+    @api.doc(params={'user1_id': 'ID of first user', 'user2_id': 'ID of second user',
+                        'meeting_start_time': 'Start time of meeting', 'meeting_end_time': 'End time of meeting'})
     def post(self):
+        """Schedule a meeting between two users"""
         args = self.parse_args()
 
         try:
