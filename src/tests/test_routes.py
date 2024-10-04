@@ -14,6 +14,7 @@ class BaseAPITestCase(unittest.TestCase):
         self.app.config['TESTING'] = True
 
         with self.app.app_context():
+            db.drop_all()
             db.create_all()
 
             # Add sample data

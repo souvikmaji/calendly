@@ -12,6 +12,10 @@ install:
 test:
 	python -m unittest discover -s tests
 
+# seed the database
+seed:
+	python seed.py
+
 # Clean up compiled Python files
 clean:
 	find . -name "*.pyc" -exec rm -f {} \;
