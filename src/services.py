@@ -60,7 +60,7 @@ def set_user_availability(user_id: int, start_time: int, end_time: int):
         raise InvalidTimestampError("Invalid timestamps")
 
     if check_availability(user_id, start_time, end_time):
-        raise AvailabilityError("User is not available in the requested time")
+        raise AvailabilityError("User is already available in the requested time")
 
     # Check if after inserting it will result in consecutive slots, if yes, merge them
     merged = merge_slots(user_id, end_time, start_time)

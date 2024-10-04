@@ -53,7 +53,7 @@ class TestGetUsers(BaseAPITestCase):
 
 class TestAvailability(BaseAPITestCase):
 
-    def test_set_non_overlapping_availability(self):
+    def test_non_overlapping(self):
         response = self.client.post('/api/availability/1',
                                     json={'start_time': self.start_time, 'end_time': self.end_time})
         self.assertEqual(201, response.status_code)
@@ -80,7 +80,7 @@ class TestAvailability(BaseAPITestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.json))
 
-    def test_set_consecutive_slots_availability(self):
+    def test_consecutive_slots(self):
         response = self.client.post('/api/availability/1',
                                     json={'start_time': self.start_time, 'end_time': self.end_time})
         self.assertEqual(201, response.status_code)
@@ -109,7 +109,8 @@ class TestAvailability(BaseAPITestCase):
         self.assertEqual(self.start_time - 3600, data[0]['start_time'])
         self.assertEqual(self.end_time + 3600, data[0]['end_time'])
 
-    def test_set_availability_invalid_time(self):
+
+    def test_invalid_time(self):
         # cannot modify a past availability
         response = self.client.post('/api/availability/1',
                                     json={'start_time': datetime.fromisoformat('2020-01-01T00:00:00').timestamp(),
@@ -124,6 +125,21 @@ class TestAvailability(BaseAPITestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertEqual('Invalid timestamps', response.json['error'])
+
+    def test_already_available(self):
+        response = self.client.post('/api/availability/1',
+                                    json={'start_time': self.start_time, 'end_time': self.end_time})
+        self.assertEqual(201, response.status_code)
+
+        response = self.client.post('/api/availability/1',
+                                    json={'start_time': self.start_time, 'end_time': self.end_time})
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('User is already available in the requested time', response.json['error'])
+
+        response = self.client.post('/api/availability/1', json={'start_time': self.start_time + 600, 'end_time': self.end_time - 600})
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('User is already available in the requested time', response.json['error'])
+
 
 class TestOverlap(BaseAPITestCase):
 
