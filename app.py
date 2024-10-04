@@ -9,7 +9,7 @@ from src.routes import bp as api_routes
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    load_dotenv()  # take environment variables from .env.
+    load_dotenv()  # take environment variables from .env
 
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///db.sqlite')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

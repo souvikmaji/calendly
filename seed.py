@@ -1,4 +1,6 @@
 import random
+
+from dotenv import load_dotenv
 from faker import Faker
 from datetime import datetime, timedelta
 
@@ -10,6 +12,7 @@ fake = Faker()
 
 def seed_users_and_availability(num_users=10, num_slots_per_user=5):
     app = create_app()
+    load_dotenv()  # take environment variables from .env
     with app.app_context():
         # create all tables
         db.create_all()
