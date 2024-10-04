@@ -4,3 +4,6 @@ class UserNotFoundError(Exception):
 
 class AvailabilityError(Exception):
     pass
+
+class InvalidTimestampError(Exception):
+    pass

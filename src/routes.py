@@ -4,7 +4,7 @@ from flask import Blueprint
 from flask_restx import Api, Resource, reqparse
 
 from src import services
-from src.api_exceptions import AvailabilityError, UserNotFoundError
+from src.api_exceptions import AvailabilityError, InvalidTimestampError, UserNotFoundError
 
 bp = Blueprint('api', __name__)
 api = Api(bp, version='1.0', title='Calendly API', description='A simple API server for scheduling meetings')
@@ -40,6 +40,8 @@ class AvailabilityApi(Resource):
         except UserNotFoundError:
             return {"error": "user do not exist"}, 404
         except AvailabilityError as e:
+            return {"error": str(e)}, 400
+        except InvalidTimestampError as e:
             return {"error": str(e)}, 400
 
         return {"message": "Availability set successfully"}, 201
@@ -77,9 +79,12 @@ class Meeting(Resource):
         try:
             services.schedule_meeting(args['user1_id'], args['user2_id'], args['meeting_start_time'],
                                       args['meeting_end_time'])
-        except UserNotFoundError:
-            return {"error": "One or both users do not exist"}, 404
-        except AvailabilityError:
-            return {"error": "No overlap found in availability for the requested time"}, 400
+        except UserNotFoundError as e:
+            return {"error": str(e)}, 404
+        except AvailabilityError as e:
+            return {"error": str(e)}, 400
+        except InvalidTimestampError as e:
+            return {"error": str(e)}, 400
+
 
         return {"message": "Meeting scheduled successfully!"}, 201

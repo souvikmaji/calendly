@@ -186,5 +186,19 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(self.end_time, data[1]['end_time'])
 
 
+    def test_schedule_meeting_invalid_time(self):
+        response = self.client.post('/api/meeting',
+                                    json={'user1_id': 1, 'user2_id': 2, 'meeting_start_time': datetime.fromisoformat('2020-01-01T00:00:00').timestamp(),
+                                          'meeting_end_time': datetime.fromisoformat('2020-01-01T01:00:00').timestamp()})
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('Invalid timestamps', response.json['error'])
+
+        response = self.client.post('/api/meeting',
+                                    json={'user1_id': 1, 'user2_id': 2, 'meeting_start_time': datetime.fromisoformat('2025-01-01T01:00:00').timestamp(),
+                                          'meeting_end_time': datetime.fromisoformat('2025-01-01T00:00:00').timestamp()})
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('Invalid timestamps', response.json['error'])
+
+
 if __name__ == '__main__':
     unittest.main()

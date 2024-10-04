@@ -4,7 +4,7 @@ import time
 from sqlalchemy import text
 
 from src.models import Availability, Meeting, User, db
-from src.api_exceptions import AvailabilityError, UserNotFoundError
+from src.api_exceptions import AvailabilityError, InvalidTimestampError, UserNotFoundError
 
 
 def get_all_users():
@@ -54,8 +54,8 @@ def set_user_availability(user_id, start_time, end_time):
     if not user:
         raise UserNotFoundError("User does not exist")
 
-    if not validate_timestamps(start_time, end_time):
-        raise AvailabilityError("Invalid timestamps")
+    if not is_valid_timestamps(start_time, end_time):
+        raise InvalidTimestampError("Invalid timestamps")
 
     # TODO: Check if the user is already available in the requested time, if there is a consecutive slot, merge them
     if check_availability(user_id, start_time, end_time):
@@ -66,19 +66,17 @@ def set_user_availability(user_id, start_time, end_time):
     db.session.commit()
 
 
-def validate_timestamps(start_time, end_time):
-    current_time = int(time.time())
-    if start_time >= end_time or start_time < current_time or end_time < current_time:
-        return False
-    return True
-
 
 def schedule_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time):
     """ Schedule a meeting between two users and update their availability. """
+    if not is_valid_timestamps(meeting_start_time, meeting_end_time):
+        raise InvalidTimestampError("Invalid timestamps")
+
     user1 = User.query.get(user1_id)
     user2 = User.query.get(user2_id)
     if not user1 or not user2:
         raise UserNotFoundError("One or both users do not exist")
+
 
     if (not check_availability(user1_id, meeting_start_time, meeting_end_time) or not check_availability(user2_id,
                                                                                                          meeting_start_time,
@@ -125,3 +123,10 @@ def _update_availability(user_id, meeting_start_time, meeting_end_time):
 
                 # Remove the original slot
                 db.session.delete(slot)
+
+
+def is_valid_timestamps(start_time, end_time):
+    current_time = int(time.time())
+    if start_time >= end_time or start_time < current_time or end_time < current_time:
+        return False
+    return True
