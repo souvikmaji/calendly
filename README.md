@@ -4,11 +4,27 @@ Rest APIs for Calendly like applications.
 
 ## Key Features
 
-- **Set Own Availability**: Users can define their available time slots.
-- **Show Own Availability**: Retrieve the user's available time slots.
-- **Find Overlap in Schedule Between 2 Users**: Compare the schedules of two users to find matching available slots.
-- **Schedule Meetings**: Create meetings if an overlap is found in the availability of two users.
-- **Get All Users**: Retrieve all users. (Possible use case: admin dashboard)
+1. **User Management**  
+- Retrieve the list of users with user details. Useful for admin users.
+
+2. **Availability Management**
+- Set availability for a user.
+- Retrieve availability for a user.
+- If consecutive & overlapping availability slots are set, they are merged into a single slot.
+- If a new availability slot engulfs an existing slot, the existing slot is removed and the larger slot is added.
+- Prevent setting availability if the user is already available in the requested time.
+
+3. **Overlap Management**  
+- Find overlap (partial & full) in availability between two users.
+- Find partial overlap in availability between two users.
+
+4. **Meeting Scheduling**
+- Schedule a meeting when both users are available.
+- Ensure availability is removed after scheduling a meeting.
+- If a meeting is scheduled in between an availability slot, the remaining slot is split into two slots.
+
+5. **Timezone handling**
+-  The backend saves all timestamp fields in epoch timestamp. The frontend can convert it to the user's timezone (or any timezone of the user's choice).
 
 
 ## Installation
@@ -71,5 +87,34 @@ Access the API documentation at [http://localhost:5001/api/docs](http://localhos
     make test
     ```
    
+### Tech Stack
+- Python + Flask: Micro framework for fast prototyping.
+- Postgresql: Primary data store ( the data model fits well with a relational database).
+- Gunicorn: WSGI server.
+- Docker: For containerization.
+- Heroku: For deployment.
+- Swagger: For API documentation.
+- ER Diagram:
+
+```
++-----------------+ N             1 +-----------------+ 1           N +-----------------+
+|   Availability  |<---------------|      User       |-------------->|     Meeting     |
++-----------------+                +-----------------+               +-----------------+
+| id (PK)         |                | id (PK)         |               | id (PK)         |
+| user_id (FK)    |                | name            |               | user1_id (FK)   |
+| start_time (IDX)|                +-----------------+               | user2_id (FK)   |
+| end_time (IDX)  |                                                  | meeting_time    |
++-----------------+                                                  +-----------------+
+```
+
+   
+## Future Improvements
+- Add authentication and authorization (one user should not be able to set availability of another user).
+- If two users try to set availability or meetings at the same time, it may lead to concurrency issues. But kept it Out Of Scope for now.
+- The meeting feature can be improved to support meeting invitation, recurring meetings, meeting location etc.
+- We can implement another useful API, Timeline view API, which will return all the available slots and scheduled meetings
+  for a user in a timeline view.
+- The list APIs can be paginated.
+
 
 
