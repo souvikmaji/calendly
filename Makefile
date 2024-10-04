@@ -10,7 +10,7 @@ install:
 
 # Target to run test cases
 test:
-	python -m unittest discover -s tests
+	python -m unittest discover -s src/tests
 
 # seed the database
 seed:
