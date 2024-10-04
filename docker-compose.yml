@@ -1,0 +1,27 @@
+services:
+  web:
+    container_name: calendly-web
+#    entrypoint: python seed.py && python -m flask run --host=
+    build: .
+    ports:
+      - "5001:5001"
+    environment:
+      - DATABASE_URL=postgresql://flask:flask@db:5432/calendly
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    container_name: calendly-db
+    volumes:
+      - calendly-db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: flask
+      POSTGRES_PASSWORD: flask
+      POSTGRES_DB: calendly
+    ports:
+      - "5432:5432"
+    command: [ "postgres", "-c", "log_statement=all", "-c", "log_destination=stderr" ]
+
+volumes:
+    calendly-db-data:
