@@ -1,7 +1,5 @@
 # Harbor Take Home Project
 
-Welcome to the Harbor take home project. We hope this is a good opportunity for you to showcase your skills.
-
 ## The Challenge
 
 Build us a REST API for calendly. Remember to support
@@ -10,7 +8,7 @@ Build us a REST API for calendly. Remember to support
 - Showing own availability
 - Finding overlap in schedule between 2 users
 
-It is up to you what else to support.
+--------------------------------------------
 
 ## Expectations
 

@@ -59,7 +59,7 @@ class APITestCase(unittest.TestCase):
                                     json={'start_time': datetime.fromisoformat('2020-01-01T00:00:00').timestamp(),
                                           'end_time': datetime.fromisoformat('2020-01-01T01:00:00').timestamp()})
         self.assertEqual(400, response.status_code)
-        self.assertEqual('Invalid time', response.json['error'])
+        self.assertEqual('Invalid timestamps', response.json['error'])
 
         # start time cannot be greater than end time
         response = self.client.post('/api/availability/1',

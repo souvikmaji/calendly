@@ -1,6 +1,8 @@
 # Business logic for handling availability and overlaps
 import time
 
+from sqlalchemy import text
+
 from src.models import Availability, Meeting, User, db
 from src.api_exceptions import AvailabilityError, UserNotFoundError
 
@@ -15,30 +17,36 @@ def get_availability(user_id):
 
 
 def find_overlap(user1_id, user2_id):
-    user1_slots = get_availability(user1_id)
-    user2_slots = get_availability(user2_id)
+    query = """
+        SELECT 
+            GREATEST(a1.start_time, a2.start_time) AS overlap_start,
+            LEAST(a1.end_time, a2.end_time) AS overlap_end
+        FROM 
+            availabilities a1
+        JOIN 
+            availabilities a2 
+        ON 
+            a1.user_id = :user1_id AND a2.user_id = :user2_id
+        WHERE 
+            GREATEST(a1.start_time, a2.start_time) < LEAST(a1.end_time, a2.end_time)
+        """
 
-    overlaps = []
-
-    for slot1 in user1_slots:
-        for slot2 in user2_slots:
-            overlap_start = max(slot1.start_time, slot2.start_time)
-            overlap_end = min(slot1.end_time, slot2.end_time)
-
-            if overlap_start < overlap_end:
-                overlaps.append({"start_time": overlap_start, "end_time": overlap_end})
+    result = db.session.execute(text(query), {'user1_id': user1_id, 'user2_id': user2_id})
+    overlaps = [{'start_time': row[0], 'end_time': row[1]} for row in result]
 
     return overlaps
 
 
 def check_availability(user_id, start_time, end_time):
-    """ Check if a user has availability during the requested meeting time. """
-    available_slots = get_availability(user_id)
+    """ Check if a user has availability during the requested meeting time directly in the database. """
+    result = db.session.query(Availability).filter(
+        Availability.user_id == user_id,
+        Availability.start_time <= start_time,
+        Availability.end_time >= end_time
+    ).first()
 
-    for slot in available_slots:
-        if slot.start_time <= start_time and slot.end_time >= end_time:
-            return True  # Available
-    return False
+    return result is not None
+
 
 
 def set_user_availability(user_id, start_time, end_time):
@@ -46,9 +54,8 @@ def set_user_availability(user_id, start_time, end_time):
     if not user:
         raise UserNotFoundError("User does not exist")
 
-    current_time = int(time.time())
-    if start_time >= end_time or start_time < current_time or end_time < current_time:
-        raise AvailabilityError("Invalid time")
+    if not validate_timestamps(start_time, end_time):
+        raise AvailabilityError("Invalid timestamps")
 
     # TODO: Check if the user is already available in the requested time, if there is a consecutive slot, merge them
     if check_availability(user_id, start_time, end_time):
@@ -57,6 +64,13 @@ def set_user_availability(user_id, start_time, end_time):
     availability = Availability(user_id=user_id, start_time=start_time, end_time=end_time)
     db.session.add(availability)
     db.session.commit()
+
+
+def validate_timestamps(start_time, end_time):
+    current_time = int(time.time())
+    if start_time >= end_time or start_time < current_time or end_time < current_time:
+        return False
+    return True
 
 
 def schedule_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time):
