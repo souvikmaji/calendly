@@ -7,7 +7,7 @@ from src.db import init_db
 from src.routes import bp as api_routes
 
 
-def create_app():
+def create_app() -> Flask:
     app = Flask(__name__)
     load_dotenv()  # take environment variables from .env.
 

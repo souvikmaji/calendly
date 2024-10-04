@@ -1,5 +1,6 @@
 # Business logic for handling availability and overlaps
 import time
+from typing import List
 
 from sqlalchemy import text
 
@@ -7,16 +8,20 @@ from src.models import Availability, Meeting, User, db
 from src.api_exceptions import AvailabilityError, InvalidTimestampError, UserNotFoundError
 
 
-def get_all_users():
+def get_all_users() -> List[User]:
     return User.query.all()
 
 
-def get_availability(user_id):
+def get_availability(user_id: int) -> List[Availability]:
     availability = Availability.query.filter_by(user_id=user_id).all()
     return availability
 
 
-def find_overlap(user1_id, user2_id):
+def find_overlap(user1_id: int, user2_id: int) -> List[dict]:
+    """
+    return a list of overlapping time slots between two users, in the format: [{"start_time": int, "end_time": int}]
+    """
+
     query = """
         SELECT 
             GREATEST(a1.start_time, a2.start_time) AS overlap_start,
@@ -37,7 +42,7 @@ def find_overlap(user1_id, user2_id):
     return overlaps
 
 
-def check_availability(user_id, start_time, end_time):
+def check_availability(user_id: int, start_time: int, end_time: int) -> bool:
     """ Check if a user has availability during the requested meeting time directly in the database. """
     result = db.session.query(Availability).filter(
         Availability.user_id == user_id,
@@ -49,7 +54,7 @@ def check_availability(user_id, start_time, end_time):
 
 
 
-def set_user_availability(user_id, start_time, end_time):
+def set_user_availability(user_id: int, start_time: int, end_time: int):
     user = User.query.get(user_id)
     if not user:
         raise UserNotFoundError("User does not exist")
@@ -67,7 +72,7 @@ def set_user_availability(user_id, start_time, end_time):
 
 
 
-def schedule_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time):
+def schedule_meeting(user1_id : int, user2_id: int, meeting_start_time: int, meeting_end_time: int):
     """ Schedule a meeting between two users and update their availability. """
     if not is_valid_timestamps(meeting_start_time, meeting_end_time):
         raise InvalidTimestampError("Invalid timestamps")
@@ -85,7 +90,7 @@ def schedule_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time):
     create_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time)
 
 
-def create_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time):
+def create_meeting(user1_id: int, user2_id: int, meeting_start_time: int, meeting_end_time: int):
     # Create new meeting entry
     meeting = Meeting(user1_id=user1_id, user2_id=user2_id, meeting_time=meeting_start_time)
     db.session.add(meeting)
@@ -99,7 +104,7 @@ def create_meeting(user1_id, user2_id, meeting_start_time, meeting_end_time):
     db.session.commit()
 
 
-def _update_availability(user_id, meeting_start_time, meeting_end_time):
+def _update_availability(user_id: int, meeting_start_time: int, meeting_end_time: int):
     """ Adjust user's availability by removing or splitting slots based on the meeting time. """
     available_slots = Availability.query.filter_by(user_id=user_id).all()
 
@@ -125,7 +130,7 @@ def _update_availability(user_id, meeting_start_time, meeting_end_time):
                 db.session.delete(slot)
 
 
-def is_valid_timestamps(start_time, end_time):
+def is_valid_timestamps(start_time: int, end_time: int) -> bool:
     current_time = int(time.time())
     if start_time >= end_time or start_time < current_time or end_time < current_time:
         return False
