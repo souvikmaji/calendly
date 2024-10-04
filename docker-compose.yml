@@ -1,12 +1,13 @@
 services:
   web:
     container_name: calendly-web
-#    entrypoint: python seed.py && python -m flask run --host=
     build: .
     ports:
-      - "5001:5001"
+      - "5001:5000"
     environment:
       - DATABASE_URL=postgresql://flask:flask@db:5432/calendly
+      - PORT=5000
+      - FLASK_ENV=production
     depends_on:
       - db
 
