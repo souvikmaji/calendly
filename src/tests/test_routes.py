@@ -6,7 +6,7 @@ from app import create_app
 from src.models import User, db
 
 
-class APITestCase(unittest.TestCase):
+class BaseAPITestCase(unittest.TestCase):
     def setUp(self):
         self.app = create_app()
         self.client = self.app.test_client()
@@ -31,7 +31,10 @@ class APITestCase(unittest.TestCase):
             db.session.remove()
             db.drop_all()
 
-    def test_get_users(self):
+
+class TestGetUsers(BaseAPITestCase):
+
+    def test_users_exist(self):
         response = self.client.get('/api/users')
         self.assertEqual(response.status_code, 200)
         data = response.json
@@ -39,7 +42,18 @@ class APITestCase(unittest.TestCase):
         self.assertEqual('User1', data[0]['name'])
         self.assertEqual('User2', data[1]['name'])
 
-    def test_set_availability(self):
+    def test_no_users(self):
+        with self.app.app_context():
+            db.session.query(User).delete()
+            db.session.commit()
+
+        response = self.client.get('/api/users')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 0)
+
+class TestAvailability(BaseAPITestCase):
+
+    def test_set_non_overlapping_availability(self):
         response = self.client.post('/api/availability/1',
                                     json={'start_time': self.start_time, 'end_time': self.end_time})
         self.assertEqual(201, response.status_code)
@@ -66,7 +80,7 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.json))
 
-    def test_set_availability_consecutive_slots(self):
+    def test_set_consecutive_slots_availability(self):
         response = self.client.post('/api/availability/1',
                                     json={'start_time': self.start_time, 'end_time': self.end_time})
         self.assertEqual(201, response.status_code)
@@ -111,7 +125,9 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(400, response.status_code)
         self.assertEqual('Invalid timestamps', response.json['error'])
 
-    def test_check_perfect_overlap(self):
+class TestOverlap(BaseAPITestCase):
+
+    def test_perfect_overlap(self):
         response = self.client.post('/api/availability/1',
                                     json={'start_time': self.start_time, 'end_time': self.end_time})
         self.assertEqual(201, response.status_code)
@@ -127,7 +143,7 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(data[0]['start_time'], self.start_time)
         self.assertEqual(data[0]['end_time'], self.end_time)
 
-    def test_check_partial_overlap(self):
+    def test_partial_overlap(self):
         response = self.client.post('/api/availability/1',
                                     json={'start_time': self.start_time, 'end_time': self.end_time})
         self.assertEqual(201, response.status_code)
@@ -143,6 +159,7 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(self.start_time + 1800, data[0]['start_time'])
         self.assertEqual(self.end_time, data[0]['end_time'])
 
+class TestMeeting(BaseAPITestCase):
     def test_schedule_meeting(self):
         response = self.client.post('/api/availability/1',
                                     json={'start_time': self.start_time, 'end_time': self.end_time})
