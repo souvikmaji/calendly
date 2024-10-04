@@ -109,6 +109,22 @@ class TestAvailability(BaseAPITestCase):
         self.assertEqual(self.start_time - 3600, data[0]['start_time'])
         self.assertEqual(self.end_time + 3600, data[0]['end_time'])
 
+    def test_existing_engulfing_overlap(self):
+        response = self.client.post('/api/availability/1',
+                                    json={'start_time': self.start_time, 'end_time': self.end_time})
+        self.assertEqual(201, response.status_code)
+
+        response = self.client.post('/api/availability/1',
+                                    json={'start_time': self.start_time - 600, 'end_time': self.end_time + 600})
+        self.assertEqual(201, response.status_code)
+
+        response = self.client.get('/api/availability/1')
+        self.assertEqual(200, response.status_code)
+        data = response.json
+        self.assertEqual(1, len(data))
+        self.assertEqual(self.start_time - 600, data[0]['start_time'])
+        self.assertEqual(self.end_time + 600, data[0]['end_time'])
+
 
     def test_invalid_time(self):
         # cannot modify a past availability

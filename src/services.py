@@ -79,15 +79,27 @@ def merge_slots(user_id: int, end_time: int, start_time: int) -> bool:
         ((Availability.end_time >= start_time) & (Availability.start_time <= start_time))
         | ((Availability.start_time <= end_time) & (Availability.end_time >= end_time))
     ).all()
-    merged = False
-    for slot in consecutive_slots:
-        if slot.end_time >= start_time >= slot.start_time:
-            slot.end_time = end_time
-            merged = True
-        elif slot.start_time <= end_time <= slot.end_time:
-            slot.start_time = start_time
-            merged = True
-    return merged
+
+    if consecutive_slots:
+        for slot in consecutive_slots:
+            if slot.end_time >= start_time >= slot.start_time:
+                slot.end_time = end_time
+            elif slot.start_time <= end_time <= slot.end_time:
+                slot.start_time = start_time
+        return True
+
+    engulfing_slot = Availability.query.filter(
+        Availability.user_id == user_id,
+        Availability.start_time >= start_time,
+        Availability.end_time <= end_time
+    ).first()
+
+    if engulfing_slot:
+        engulfing_slot.start_time = start_time
+        engulfing_slot.end_time = end_time
+        return True
+
+    return False
 
 
 def schedule_meeting(user1_id: int, user2_id: int, meeting_start_time: int, meeting_end_time: int):
