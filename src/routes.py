@@ -19,7 +19,7 @@ class Users(Resource):
 
 
 @api.route('/availability/<int:user_id>')
-class AvailabilityApi(Resource):
+class Availability(Resource):
 
     def get(self, user_id):
         """Get availability for a user"""

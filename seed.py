@@ -34,11 +34,10 @@ def seed_users_and_availability(num_users=10, num_slots_per_user=5):
                 db.session.commit()
 
                 # Create random availability slots for each user
-                for _ in range(num_slots_per_user):
+                for i in range(num_slots_per_user):
                     # Generate random start and end times within the next week
                     start_time = fake.date_time_between(start_date="now", end_date="+7d")
-                    end_time = start_time + timedelta(
-                        hours=random.randint(1, 4))  # Random duration between 1 to 4 hours
+                    end_time = start_time + timedelta(hours=i+1)
 
                     # Convert to epoch timestamps
                     start_epoch = int(start_time.timestamp())
