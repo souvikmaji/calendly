@@ -12,7 +12,7 @@ def create_app() -> Flask:
     load_dotenv()  # take environment variables from .env
 
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///db.sqlite')
-    print(app.config['SQLALCHEMY_DATABASE_URI'])
+    print(f"SQLALCHEMY_DATABASE_URI {app.config['SQLALCHEMY_DATABASE_URI']}")
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     init_db(app)
 
