@@ -25,8 +25,6 @@ def seed_users_and_availability(num_users=10, num_slots_per_user=5):
         else:
             print(f"Database {database_name} already exists")
 
-        get_tables(db.engine)
-
         # create all tables
         db.create_all()
 
