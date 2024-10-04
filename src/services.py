@@ -4,8 +4,8 @@ from typing import List
 
 from sqlalchemy import text
 
-from src.models import Availability, Meeting, User, db
 from src.api_exceptions import AvailabilityError, InvalidTimestampError, UserNotFoundError
+from src.models import Availability, Meeting, User, db
 
 
 def get_all_users() -> List[User]:
@@ -44,14 +44,11 @@ def find_overlap(user1_id: int, user2_id: int) -> List[dict]:
 
 def check_availability(user_id: int, start_time: int, end_time: int) -> bool:
     """ Check if a user has availability during the requested meeting time directly in the database. """
-    result = db.session.query(Availability).filter(
-        Availability.user_id == user_id,
-        Availability.start_time <= start_time,
-        Availability.end_time >= end_time
-    ).first()
+    result = db.session.query(Availability).filter(Availability.user_id == user_id,
+                                                   Availability.start_time <= start_time,
+                                                   Availability.end_time >= end_time).first()
 
     return result is not None
-
 
 
 def set_user_availability(user_id: int, start_time: int, end_time: int):
@@ -62,17 +59,36 @@ def set_user_availability(user_id: int, start_time: int, end_time: int):
     if not is_valid_timestamps(start_time, end_time):
         raise InvalidTimestampError("Invalid timestamps")
 
-    # TODO: Check if the user is already available in the requested time, if there is a consecutive slot, merge them
     if check_availability(user_id, start_time, end_time):
         raise AvailabilityError("User is not available in the requested time")
 
-    availability = Availability(user_id=user_id, start_time=start_time, end_time=end_time)
-    db.session.add(availability)
+    # Check if after inserting it will result in consecutive slots, if yes, merge them
+    merged = merge_slots(user_id, end_time, start_time)
+
+    if not merged:
+        availability = Availability(user_id=user_id, start_time=start_time, end_time=end_time)
+        db.session.add(availability)
+
     db.session.commit()
 
 
+def merge_slots(user_id: int, end_time: int, start_time: int):
+    consecutive_slots = Availability.query.filter(
+        Availability.user_id == user_id,
+        (Availability.end_time == start_time) | (Availability.start_time == end_time)
+    ).all()
+    merged = False
+    for slot in consecutive_slots:
+        if slot.end_time == start_time:
+            slot.end_time = end_time
+            merged = True
+        elif slot.start_time == end_time:
+            slot.start_time = start_time
+            merged = True
+    return merged
 
-def schedule_meeting(user1_id : int, user2_id: int, meeting_start_time: int, meeting_end_time: int):
+
+def schedule_meeting(user1_id: int, user2_id: int, meeting_start_time: int, meeting_end_time: int):
     """ Schedule a meeting between two users and update their availability. """
     if not is_valid_timestamps(meeting_start_time, meeting_end_time):
         raise InvalidTimestampError("Invalid timestamps")
@@ -81,7 +97,6 @@ def schedule_meeting(user1_id : int, user2_id: int, meeting_start_time: int, mee
     user2 = User.query.get(user2_id)
     if not user1 or not user2:
         raise UserNotFoundError("One or both users do not exist")
-
 
     if (not check_availability(user1_id, meeting_start_time, meeting_end_time) or not check_availability(user2_id,
                                                                                                          meeting_start_time,
