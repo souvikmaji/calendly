@@ -59,6 +59,7 @@ def set_user_availability(user_id: int, start_time: int, end_time: int):
     if not is_valid_timestamps(start_time, end_time):
         raise InvalidTimestampError("Invalid timestamps")
 
+    # user is already available for a bigger time slot
     if check_availability(user_id, start_time, end_time):
         raise AvailabilityError("User is already available in the requested time")
 
@@ -72,17 +73,18 @@ def set_user_availability(user_id: int, start_time: int, end_time: int):
     db.session.commit()
 
 
-def merge_slots(user_id: int, end_time: int, start_time: int):
+def merge_slots(user_id: int, end_time: int, start_time: int) -> bool:
     consecutive_slots = Availability.query.filter(
         Availability.user_id == user_id,
-        (Availability.end_time == start_time) | (Availability.start_time == end_time)
+        ((Availability.end_time >= start_time) & (Availability.start_time <= start_time))
+        | ((Availability.start_time <= end_time) & (Availability.end_time >= end_time))
     ).all()
     merged = False
     for slot in consecutive_slots:
-        if slot.end_time == start_time:
+        if slot.end_time >= start_time >= slot.start_time:
             slot.end_time = end_time
             merged = True
-        elif slot.start_time == end_time:
+        elif slot.start_time <= end_time <= slot.end_time:
             slot.start_time = start_time
             merged = True
     return merged

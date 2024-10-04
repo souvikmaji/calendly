@@ -87,7 +87,7 @@ class TestAvailability(BaseAPITestCase):
 
         # set new availability that is consecutive to the previous one
         response = self.client.post('/api/availability/1',
-                                    json={'start_time': self.end_time, 'end_time': self.end_time + 3600})
+                                    json={'start_time': self.end_time-600, 'end_time': self.end_time + 3600})
         self.assertEqual(201, response.status_code)
 
         response = self.client.get('/api/availability/1')
