@@ -156,7 +156,7 @@ class TestAvailability(BaseAPITestCase):
         self.assertEqual(400, response.status_code)
         self.assertEqual('User is already available in the requested time', response.json['error'])
 
-    def test_get_availability_sorting(self):
+    def test_get_multiple_availabilities(self):
         response = self.client.post('/api/availability/1',
                                     json={'start_time': self.start_time + 7200, 'end_time': self.end_time + 7200})
         self.assertEqual(201, response.status_code)
@@ -172,6 +172,14 @@ class TestAvailability(BaseAPITestCase):
         # even though the order of insertion is different, the response should be sorted by start time
         self.assertEqual(self.start_time, data[0]['start_time'])
         self.assertEqual(self.start_time + 7200, data[1]['start_time'])
+
+        # query for a specific time range
+        response = self.client.get(f'/api/availability/1?start_time={int(self.start_time)}&end_time={int(self.start_time) + 3600}')
+        self.assertEqual(200, response.status_code)
+        data = response.json
+        self.assertEqual(1, len(data))
+        self.assertEqual(self.start_time, data[0]['start_time'])
+        self.assertEqual(self.end_time, data[0]['end_time'])
 
 
 class TestOverlap(BaseAPITestCase):

@@ -12,10 +12,13 @@ def get_all_users() -> List[User]:
     return User.query.all()
 
 
-def get_availability(user_id: int) -> List[Availability]:
-    availability = Availability.query.filter_by(user_id=user_id).order_by(Availability.start_time).all()
-    return availability
-
+def get_availability(user_id: int, start_time: int, end_time: int) -> List[Availability]:
+    availability =  Availability.query.filter(Availability.user_id == user_id)
+    if start_time:
+        availability = availability.filter(Availability.start_time >= start_time)
+    if end_time:
+        availability = availability.filter(Availability.end_time <= end_time)
+    return availability.order_by(Availability.start_time).all()
 
 def find_overlap(user1_id: int, user2_id: int) -> List[dict]:
     """

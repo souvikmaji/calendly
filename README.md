@@ -9,7 +9,7 @@ Rest APIs for Calendly like applications.
 
 2. **Availability Management**
 - Set availability for a user.
-- Retrieve availability for a user sorted by start time.
+- Retrieve availability for a user between a range sorted by start time.
 - If consecutive & overlapping availability slots are set, they are merged into a single slot.
 - If a new availability slot engulfs an existing slot, the existing slot is removed and the larger slot is added.
 - Prevent setting availability if the user is already available in the requested time.
@@ -27,6 +27,17 @@ Rest APIs for Calendly like applications.
 -  The backend saves all timestamp fields in epoch timestamp. The frontend can convert it to the user's timezone (or any timezone of the user's choice).
 
 6. **Swagger Documentation**
+
+
+### Assumptions
+- The user can set availability and schedule meetings for any time in the future not in the past.
+- Meetings are between two users only. Group meetings are not supported.
+- Authentication & authorization is someone else's responsibility (ex: API Gateway).
+- When someone is checking for availability of another user, most likely they are checking availability for a specific date. This also helps us reducing the search space. For ease of testing, I have kept the date range optional.
+- Users are already existing in the system, sign up might be implemented in a different service.
+- Timezone handling is the responsibility of the frontend. The backend saves all timestamps in epoch timestamp.
+- There is no daylight saving time handling.
+
 
 ## Installation
 
@@ -108,12 +119,7 @@ Access the API documentation at [http://localhost:5001/api/docs](http://localhos
 +-----------------+                                                  +-----------------+
 ```
 
-### Assumptions
-- The user can set availability and schedule meetings for any time in the future not in the past.
-- Authentication & authorization is someone else's responsibility (ex: API Gateway).
-- Users are already existing in the system, sign up might be implemented in a different service.
-- Timezone handling is the responsibility of the frontend. The backend saves all timestamps in epoch timestamp.
-- There is no daylight saving time handling. 
+
    
 ## Future Improvements
 - Add authentication and authorization (one user should not be able to set availability of another user).

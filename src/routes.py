@@ -20,23 +20,25 @@ class Users(Resource):
 
 @api.route('/availability/<int:user_id>')
 class Availability(Resource):
-
-    def get(self, user_id):
-        """Get availabilities for a user sorted by start time"""
-        availability = services.get_availability(user_id)
-        return [{"start_time": slot.start_time, "end_time": slot.end_time} for slot in availability]
-
-    def parse_args(self):
+    def parse_args(self, required):
         parser = reqparse.RequestParser()
-        parser.add_argument('start_time', type=int, required=True)
-        parser.add_argument('end_time', type=int, required=True)
+        parser.add_argument('start_time', type=int, required=required)
+        parser.add_argument('end_time', type=int, required=required)
         return parser.parse_args()
+
+    @api.doc(params={'start_time': '[Optional] Min timestamp range', 'end_time': '[Optional] Max timestamp range'})
+    def get(self, user_id):
+        """Get availabilities for a user in a time range, sorted by start time"""
+        args = self.parse_args(required=False)
+
+        availability = services.get_availability(user_id, args['start_time'], args['end_time'])
+        return [{"start_time": slot.start_time, "end_time": slot.end_time} for slot in availability]
 
     @api.doc(params={'start_time': 'Start time of availability slot', 'end_time': 'End time of availability slot'})
     def post(self, user_id):
         """Set availability for a user"""
 
-        args = self.parse_args()
+        args = self.parse_args(required=True)
 
         try:
             services.set_user_availability(user_id, args['start_time'], args['end_time'])
