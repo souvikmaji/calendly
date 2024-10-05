@@ -10,7 +10,7 @@ bp = Blueprint('api', __name__)
 api = Api(bp, version='1.0', title='Calendly API', description='A simple API server for scheduling meetings', doc='/docs')
 
 
-@api.route('/users')
+@api.route('/admin/users')
 class Users(Resource):
     def get(self):
         """Get all users"""

@@ -35,7 +35,7 @@ class BaseAPITestCase(unittest.TestCase):
 class TestGetUsers(BaseAPITestCase):
 
     def test_users_exist(self):
-        response = self.client.get('/api/users')
+        response = self.client.get('/api/admin/users')
         self.assertEqual(response.status_code, 200)
         data = response.json
         self.assertEqual(len(data), 2)
@@ -47,7 +47,7 @@ class TestGetUsers(BaseAPITestCase):
             db.session.query(User).delete()
             db.session.commit()
 
-        response = self.client.get('/api/users')
+        response = self.client.get('/api/admin/users')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json), 0)
 
