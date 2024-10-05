@@ -22,7 +22,7 @@ class Users(Resource):
 class Availability(Resource):
 
     def get(self, user_id):
-        """Get availability for a user"""
+        """Get availabilities for a user sorted by start time"""
         availability = services.get_availability(user_id)
         return [{"start_time": slot.start_time, "end_time": slot.end_time} for slot in availability]
 

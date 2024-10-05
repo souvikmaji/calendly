@@ -9,7 +9,7 @@ Rest APIs for Calendly like applications.
 
 2. **Availability Management**
 - Set availability for a user.
-- Retrieve availability for a user.
+- Retrieve availability for a user sorted by start time.
 - If consecutive & overlapping availability slots are set, they are merged into a single slot.
 - If a new availability slot engulfs an existing slot, the existing slot is removed and the larger slot is added.
 - Prevent setting availability if the user is already available in the requested time.

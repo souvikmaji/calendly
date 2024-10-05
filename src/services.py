@@ -13,7 +13,7 @@ def get_all_users() -> List[User]:
 
 
 def get_availability(user_id: int) -> List[Availability]:
-    availability = Availability.query.filter_by(user_id=user_id).all()
+    availability = Availability.query.filter_by(user_id=user_id).order_by(Availability.start_time).all()
     return availability
 
 
